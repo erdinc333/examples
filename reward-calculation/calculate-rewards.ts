@@ -66,8 +66,14 @@ async function calculateRewards() {
                 .sort((a, b) => a.price - b.price);
 
             // Determine Mid Price
-            const bestBid = bids.length > 0 ? bids[0].price : 0;
-            const bestAsk = asks.length > 0 ? asks[0].price : 0;
+            const bestBid = bids.length > 0 ? bids[0].price : undefined;
+            const bestAsk = asks.length > 0 ? asks[0].price : undefined;
+
+            if (bestBid === undefined || bestAsk === undefined) {
+                console.log(`Outcome: ${outcome} - Skipping (One-sided or empty order book)`);
+                continue;
+            }
+
             const midPrice = (bestBid + bestAsk) / 2;
 
             console.log(`Outcome: ${outcome} (Mid Price: ${midPrice.toFixed(4)})`);
@@ -87,7 +93,7 @@ async function calculateRewards() {
 
             for (const spread of spreads) {
                 // Use Additive Spread (e.g. +/- 1 cent) for accurate low-price handling
-                const minBid = midPrice - spread.val;
+                const minBid = Math.max(0, midPrice - spread.val); // Clamp to 0 to avoid negative price filter
                 const maxAsk = midPrice + spread.val;
 
                 const validBids = bids.filter(b => b.price >= minBid);
