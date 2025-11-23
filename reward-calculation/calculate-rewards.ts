@@ -74,10 +74,16 @@ async function calculateRewards() {
 
             // 5. Calculate Depth and Rewards for different spreads
             const spreads = [
-                { label: "1%", val: 0.01 },
-                { label: "2%", val: 0.02 },
-                { label: "3%", val: 0.03 }
+                { label: "1 cent", val: 0.01 },
+                { label: "2 cents", val: 0.02 },
+                { label: "3 cents", val: 0.03 }
             ];
+
+            // Calculate total probability (sum of mid prices) for normalization
+            // Note: In a real scenario, we should sum mid prices of ALL outcomes first.
+            // For this simple script, we'll assume the user runs it for all outcomes and manually checks.
+            // But to be more accurate per outcome, we can just use the midPrice as a proxy for probability.
+            // A better approach for the script is to fetch ALL outcomes first, sum their midPrices, then loop.
 
             for (const spread of spreads) {
                 // Use Additive Spread (e.g. +/- 1 cent) for accurate low-price handling
@@ -94,13 +100,11 @@ async function calculateRewards() {
 
                 // Estimate Reward
                 // Formula: DailyPool * (UserInv / (TotalDepth + UserInv))
-                // Note: This assumes the pool is split equally or based on probability. 
-                // For simplicity here, we apply the user's share to the *entire* pool for this outcome's liquidity.
-                // In reality, rewards are split by outcome probability.
-                const userShare = INVESTMENT_AMOUNT / (totalDepth + INVESTMENT_AMOUNT);
-                // Adjust reward by probability (approximate using price)
+                // We allocate the daily pool based on the outcome's probability (approx. midPrice)
+                // To be strictly correct, we should normalize if sum(midPrices) != 1.
+                // For this example, we'll use midPrice directly as the probability estimate.
                 const outcomeRewardPool = dailyRewardPool * midPrice;
-                const estReward = outcomeRewardPool * userShare;
+                const estReward = outcomeRewardPool * (INVESTMENT_AMOUNT / (totalDepth + INVESTMENT_AMOUNT));
 
                 console.log(`  Spread +/- ${spread.label} ($${minBid.toFixed(3)} - $${maxAsk.toFixed(3)}):`);
                 console.log(`    Depth: $${totalDepth.toFixed(2)} (Bids: $${bidDepth.toFixed(0)}, Asks: $${askDepth.toFixed(0)})`);
